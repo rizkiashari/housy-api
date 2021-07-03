@@ -105,31 +105,36 @@ exports.addHouse = async (req, res) => {
       ...house,
       cityId: req.body.cityId,
     });
-
-    const secretKey = "iniRahasiabanget";
-    const token = jwt.sign(
-      {
-        id: house.id,
+    const houseOne = await House.findOne({
+      where: {
+        id: dataHouse.id,
       },
-      secretKey
-    );
-
+      include: {
+        model: City,
+        as: "city",
+        attributes: {
+          exclude: ["createdAt", "updatedAt"],
+        },
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "cityId"],
+      },
+    });
     res.status(200).send({
       status: "Success",
       message: "resource has successfully Add House",
       data: {
-        id: dataHouse.id,
-        name: dataHouse.name,
+        name: houseOne.name,
         city: {
-          id: dataHouse.city.id,
-          name: dataHouse.city.name,
+          id: houseOne.city.id,
+          name: houseOne.city.name,
         },
-        address: dataHouse.address,
-        price: dataHouse.price,
-        typeRent: dataHouse.typeRent,
-        Ameneties: dataHouse.Ameneties.split(","),
-        bedRoom: dataHouse.bedRoom,
-        bathroom: dataHouse.bathroom,
+        address: houseOne.address,
+        price: houseOne.price,
+        typeRent: houseOne.typeRent,
+        Ameneties: houseOne.Ameneties.split(","),
+        bedRoom: houseOne.bedRoom,
+        bathroom: houseOne.bathroom,
       },
     });
   } catch (error) {
@@ -137,6 +142,86 @@ exports.addHouse = async (req, res) => {
     res.status(500).send({
       status: "failed",
       message: "house add invalid",
+    });
+  }
+};
+
+// Edit House
+exports.editHouse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    //let dataHouse = req.body;
+
+    await House.update(req.body, {
+      where: {
+        id,
+      },
+    });
+
+    const houseOne = await House.findOne({
+      where: {
+        id,
+      },
+      include: {
+        model: City,
+        as: "city",
+        attributes: {
+          exclude: ["createdAt", "updatedAt"],
+        },
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "cityId"],
+      },
+    });
+
+    res.status(200).send({
+      status: "Success",
+      message: "Update Succes",
+      data: {
+        name: houseOne.name,
+        city: {
+          id: houseOne.city.id,
+          name: houseOne.city.name,
+        },
+        address: houseOne.address,
+        price: houseOne.price,
+        typeRent: houseOne.typeRent,
+        Ameneties: houseOne.Ameneties.split(","),
+        bedRoom: houseOne.bedRoom,
+        bathroom: houseOne.bathroom,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      status: "failed",
+      message: "Update not found",
+    });
+  }
+};
+
+// Delete House
+exports.deleteHouse = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const dataHouse = await House.destroy({
+      where: {
+        id,
+      },
+    });
+    res.status(200).send({
+      status: "Success",
+      message: "resource has successfully deleted House",
+      data: {
+        id,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      status: "failed",
+      message: "Delete not found",
     });
   }
 };

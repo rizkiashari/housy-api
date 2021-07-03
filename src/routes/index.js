@@ -7,7 +7,13 @@ const {
   updateUser,
   login,
 } = require("../controller/user/user");
-const { getHouses, getHouse, addHouse } = require("../controller/houses/house");
+const {
+  getHouses,
+  getHouse,
+  addHouse,
+  editHouse,
+  deleteHouse,
+} = require("../controller/houses/house");
 const { auth, authHouse } = require("../middleware/auth");
 
 const router = Router();
@@ -33,6 +39,10 @@ router.get("/houses", getHouses);
 // Get Detail House
 router.get("/house/:id", getHouse);
 // Add House
-router.post("/house", authHouse, addHouse);
+router.post("/house", auth, addHouse);
+// Edit House
+router.patch("/house/:id", auth, editHouse);
+// Delete House
+router.delete("/house/:id", auth, deleteHouse);
 
 module.exports = router;
