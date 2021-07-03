@@ -109,7 +109,7 @@ exports.createUser = async (req, res) => {
       listId: req.body.listAsId,
       password: hashedPassword,
     });
-    const secretKey = "iniRahasiabanget";
+    const secretKey = process.env.SECRET_KEY;
     const token = jwt.sign(
       {
         id: userData.id,
