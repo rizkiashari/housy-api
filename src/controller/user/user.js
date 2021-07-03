@@ -64,6 +64,7 @@ exports.getUser = async (req, res) => {
 exports.createUser = async (req, res) => {
   //console.log("Oke saya user", User);
   try {
+    // Email
     const { email, password } = req.body;
     const userData = req.body;
 
