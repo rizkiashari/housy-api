@@ -1,11 +1,16 @@
-const { transaction, House, City } = require("../../../models");
+const { transaction, House, City, User, Roll } = require("../../../models");
 
 // Add Transaction
 exports.addTransaction = async (req, res) => {
+  const path = process.env.PATH_FILE;
+  let transaksi = req.body;
+  const attachment = req.files.imageFile[0].filename;
+
   try {
-    const path = process.env.PATH_FILE;
-    let transaksi = req.body;
-    const attachment = req.files.imageFile[0].filename;
+    transaksi = {
+      ...transaksi,
+      attachment,
+    };
 
     if (!req.body.houseId) {
       return res.status(500).send({
@@ -13,15 +18,35 @@ exports.addTransaction = async (req, res) => {
         message: "Transaction invalid, Not Found House",
       });
     }
-
-    const dataTransaksi = await transaction.create({
-      ...transaksi,
-      houseId: req.body.houseId,
+    if (req.body.userId != req.idUser) {
+      return res.status(500).send({
+        status: "Failed",
+        message: `Transaction invalid, Transaction important User ${req.idUser}`,
+      });
+    }
+    const userData = await User.findOne({
+      where: {
+        id: req.idUser,
+      },
+      include: {
+        model: Roll,
+        as: "listAs",
+        attributes: {
+          exclude: ["createdAt", "updatedAt"],
+        },
+      },
+      attributes: {
+        exclude: ["listId", "createdAt", "updatedAt", "password", "image"],
+      },
     });
 
-    const transactionOne = await transaction.findOne({
+    let trxCreate = await transaction.create({
+      ...transaksi,
+    });
+
+    let dataTransaksi = await transaction.findOne({
       where: {
-        id: dataTransaksi.id,
+        id: trxCreate.id,
       },
       include: {
         model: House,
@@ -37,36 +62,27 @@ exports.addTransaction = async (req, res) => {
           exclude: ["createdAt", "updatedAt", "cityId"],
         },
       },
+
       attributes: {
-        exclude: ["createdAt", "updatedAt", "houseId"],
+        exclude: ["createdAt", "updatedAt", "houseId", "userId"],
       },
     });
+
+    dataTransaksi = JSON.parse(JSON.stringify(dataTransaksi));
+    console.log("Data Transaksi", dataTransaksi);
+    dataTransaksi = {
+      ...dataTransaksi,
+      attachment: path + attachment,
+      house: {
+        ...dataTransaksi.house,
+        Ameneties: dataTransaksi.house.Ameneties.split(","),
+      },
+    };
 
     res.status(200).send({
       status: "Success",
       message: "resource has successfully Add Transaction",
-      data: {
-        id: transactionOne.id,
-        checkin: transactionOne.checkin,
-        checkout: transactionOne.checkout,
-        house: {
-          id: transactionOne.house.id,
-          name: transactionOne.house.name,
-          city: {
-            id: transactionOne.house.city.id,
-            name: transactionOne.house.city.name,
-          },
-          address: transactionOne.house.address,
-          price: transactionOne.house.price,
-          typeRent: transactionOne.house.typeRent,
-          Ameneties: transactionOne.house.Ameneties.split(","),
-          bedRoom: transactionOne.house.bedRoom,
-          bathroom: transactionOne.house.bathroom,
-        },
-        total: transactionOne.total,
-        status: transactionOne.status,
-        attachment: transactionOne.attachment,
-      },
+      data: { dataTransaksi, userData },
     });
   } catch (error) {
     console.log(error);
@@ -82,20 +98,21 @@ exports.editTransaction = async (req, res) => {
   try {
     const path = process.env.PATH_FILE;
     const { id } = req.params;
-
     let dataTransaction = req.body;
-    const attachment = req.files.imageFile[0].filename;
 
     dataTransaction = {
       ...dataTransaction,
-      attachment,
       houseId: req.body.houseId,
     };
 
-    if (!req.body.houseId) {
+    console.log("req body", req.body);
+
+    console.log("data Transaksi", dataTransaction);
+
+    if (!dataTransaction.houseId) {
       return res.status(500).send({
         status: "Failed",
-        message: "Transaction invalid, Not Found House",
+        message: `Transaction invalid, Not Found House ${req.body.houseId}`,
       });
     }
     await transaction.update(dataTransaction, {
@@ -119,13 +136,24 @@ exports.editTransaction = async (req, res) => {
           },
         },
         attributes: {
-          exclude: ["createdAt", "updatedAt", "cityId"],
+          exclude: ["createdAt", "updatedAt", "cityId", "image"],
         },
       },
       attributes: {
         exclude: ["createdAt", "updatedAt", "houseId"],
       },
     });
+    transactionOne = JSON.parse(JSON.stringify(transactionOne));
+    transactionOne = {
+      ...transactionOne,
+      house: {
+        ...transactionOne.house,
+        Ameneties: transactionOne.house.Ameneties.split(","),
+      },
+      attachment: transactionOne.attachment
+        ? path + transactionOne.attachment
+        : null,
+    };
 
     res.status(200).send({
       status: "Success",
@@ -239,7 +267,7 @@ exports.getTransactions = async (req, res) => {
           address: trx.house.address,
           price: trx.house.price,
           typeRent: trx.house.typeRent,
-          Ameneties: trx.house.Ameneties,
+          Ameneties: trx.house.Ameneties.split(","),
           bedRoom: trx.house.bedRoom,
           bathroom: trx.house.bathroom,
         },

@@ -54,9 +54,9 @@ router.delete("/house/:id", auth, deleteHouse);
 
 // 3. Transaction
 // Add Transaction
-router.post("/transaction", auth, addTransaction);
+router.post("/transaction", auth, uploadFile("imageFile"), addTransaction);
 // Edit Transaction
-router.patch("/order/:id", uploadFile("imageFile"), editTransaction);
+router.patch("/order/:id", auth, editTransaction);
 // Get Transaction
 router.get("/order/:id", getTransaction);
 // Get All Transaction

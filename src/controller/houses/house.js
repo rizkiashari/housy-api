@@ -1,15 +1,37 @@
-const { House, City } = require("../../../models");
-// const { op } = require("sequelize");
-// const { lte, like } = op;
+const { House, City, User, Roll } = require("../../../models");
+const { Op } = require("sequelize");
+const { lte, like } = Op;
 
 // Get All Houses
 exports.getHouses = async (req, res) => {
   //console.log("Oke saya", House);
-  console.log(req.query);
+  // console.log(req.query);
   const path = process.env.PATH_FILE;
+  let filterHouse = req.query;
+
+  if (filterHouse.hasOwnProperty("below_price")) {
+    filterHouse = {
+      ...filterHouse,
+      price: {
+        [lte]: parseInt(filterHouse.below_price),
+      },
+    };
+    delete filterHouse.price;
+  }
+  if (filterHouse.hasOwnProperty("Amenities")) {
+    filterHouse = {
+      ...filterHouse,
+      Ameneties: {
+        [like]: parseInt(filterHouse.Amenities),
+      },
+    };
+  }
 
   try {
-    const houses = await House.findAll({
+    let houseData = await House.findAll({
+      where: {
+        ...filterHouse,
+      },
       include: {
         model: City,
         as: "city",
@@ -21,8 +43,8 @@ exports.getHouses = async (req, res) => {
         exclude: ["createdAt", "updatedAt", "cityId"],
       },
     });
-
-    const houseData = houses.map((house) => {
+    houseData = JSON.parse(JSON.stringify(houseData));
+    houseData = houseData.map((house) => {
       return {
         id: house.id,
         name: house.name,
@@ -115,7 +137,6 @@ exports.addHouse = async (req, res) => {
       ...house,
       image,
     };
-
     const checkCity = await City.findOne({
       where: {
         id: house.cityId,
@@ -126,38 +147,63 @@ exports.addHouse = async (req, res) => {
         message: `city id ${house.cityId} not found`,
       });
     }
-    let dataHouse = await House.create({
-      ...house,
-    });
-
-    dataHouse = await House.findOne({
+    const userData = await User.findOne({
       where: {
-        id: dataHouse.id,
+        id: req.idUser,
       },
       include: {
-        model: City,
-        as: "city",
+        model: Roll,
+        as: "listAs",
         attributes: {
           exclude: ["createdAt", "updatedAt"],
         },
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt", "cityId"],
+        exclude: ["listId", "createdAt", "updatedAt", "password", "image"],
       },
     });
 
-    dataHouse = JSON.parse(JSON.stringify(dataHouse));
-    dataHouse = {
-      ...dataHouse,
-      Ameneties: dataHouse.Ameneties.split(","),
-      image: path + image,
-    };
+    console.log("Aku user list As", userData.listAs.name);
 
-    res.status(200).send({
-      status: "Success",
-      message: "resource has successfully Add House",
-      data: dataHouse,
-    });
+    if (userData.listAs.name === "owner") {
+      let dataHouse = await House.create({
+        ...house,
+      });
+
+      dataHouse = await House.findOne({
+        where: {
+          id: dataHouse.id,
+        },
+        include: {
+          model: City,
+          as: "city",
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+        attributes: {
+          exclude: ["createdAt", "updatedAt", "cityId"],
+        },
+      });
+
+      dataHouse = JSON.parse(JSON.stringify(dataHouse));
+      dataHouse = {
+        ...dataHouse,
+        Ameneties: dataHouse.Ameneties.split(","),
+        image: path + image,
+      };
+
+      res.status(200).send({
+        status: "Success",
+        message: "resource has successfully Add House",
+        data: dataHouse,
+      });
+    } else {
+      res.status(500).send({
+        status: "failed",
+        message: `Gagal add house, Kamu ${userData.listAs.name}`,
+      });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -171,6 +217,8 @@ exports.addHouse = async (req, res) => {
 exports.editHouse = async (req, res) => {
   try {
     const { id } = req.params;
+    const path = process.env.PATH_FILE;
+
     //let dataHouse = req.body;
 
     await House.update(req.body, {
