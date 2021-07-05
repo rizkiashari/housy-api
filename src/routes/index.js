@@ -14,7 +14,14 @@ const {
   editHouse,
   deleteHouse,
 } = require("../controller/houses/house");
-const { auth, authHouse } = require("../middleware/auth");
+const { auth } = require("../middleware/auth");
+const {
+  addTransaction,
+  editTransaction,
+  getTransaction,
+  getTransactions,
+} = require("../controller/transaction/transaction");
+const { uploadFile } = require("../middleware/uploadFile");
 
 const router = Router();
 
@@ -39,10 +46,20 @@ router.get("/houses", getHouses);
 // Get Detail House
 router.get("/house/:id", getHouse);
 // Add House
-router.post("/house", auth, addHouse);
+router.post("/house", auth, uploadFile("imageFile"), addHouse);
 // Edit House
 router.patch("/house/:id", auth, editHouse);
 // Delete House
 router.delete("/house/:id", auth, deleteHouse);
+
+// 3. Transaction
+// Add Transaction
+router.post("/transaction", auth, addTransaction);
+// Edit Transaction
+router.patch("/order/:id", uploadFile("imageFile"), editTransaction);
+// Get Transaction
+router.get("/order/:id", getTransaction);
+// Get All Transaction
+router.get("/transactions", getTransactions);
 
 module.exports = router;

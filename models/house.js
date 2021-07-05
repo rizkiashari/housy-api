@@ -15,6 +15,12 @@ module.exports = (sequelize, DataTypes) => {
           name: "cityId",
         },
       });
+      House.hasOne(models.transaction, {
+        as: "transaksi",
+        foreignKey: {
+          name: "houseId",
+        },
+      });
     }
   }
   House.init(
@@ -22,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
       name: DataTypes.STRING,
       address: DataTypes.STRING,
       price: DataTypes.INTEGER,
+      image: DataTypes.STRING,
       typeRent: DataTypes.STRING,
       Ameneties: DataTypes.STRING,
       bedRoom: DataTypes.INTEGER,

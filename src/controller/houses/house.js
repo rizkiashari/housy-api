@@ -1,9 +1,13 @@
 const { House, City } = require("../../../models");
-const jwt = require("jsonwebtoken");
+// const { op } = require("sequelize");
+// const { lte, like } = op;
 
 // Get All Houses
 exports.getHouses = async (req, res) => {
-  console.log("Oke saya", House);
+  //console.log("Oke saya", House);
+  console.log(req.query);
+  const path = process.env.PATH_FILE;
+
   try {
     const houses = await House.findAll({
       include: {
@@ -28,6 +32,7 @@ exports.getHouses = async (req, res) => {
         },
         address: house.address,
         price: house.price,
+        image: house.image ? path + house.image : null,
         typeRent: house.typeRent,
         Ameneties: house.Ameneties.split(","),
         bedRoom: house.bedRoom,
@@ -53,6 +58,7 @@ exports.getHouses = async (req, res) => {
 // Get Detail House with id
 exports.getHouse = async (req, res) => {
   // console.log("Oke saya", House);
+  const path = process.env.PATH_FILE;
   try {
     const houseOne = await House.findOne({
       where: {
@@ -80,6 +86,7 @@ exports.getHouse = async (req, res) => {
           id: houseOne.city.id,
           name: houseOne.city.name,
         },
+        image: houseOne.image ? path + houseOne.image : null,
         address: houseOne.address,
         price: houseOne.price,
         typeRent: houseOne.typeRent,
@@ -99,13 +106,31 @@ exports.getHouse = async (req, res) => {
 
 // Add House
 exports.addHouse = async (req, res) => {
+  const path = process.env.PATH_FILE;
+  let house = req.body;
+  const image = req.files.imageFile[0].filename;
+
   try {
-    const house = req.body;
-    const dataHouse = await House.create({
+    house = {
       ...house,
-      cityId: req.body.cityId,
+      image,
+    };
+
+    const checkCity = await City.findOne({
+      where: {
+        id: house.cityId,
+      },
     });
-    const houseOne = await House.findOne({
+    if (!checkCity) {
+      return res.status(500).send({
+        message: `city id ${house.cityId} not found`,
+      });
+    }
+    let dataHouse = await House.create({
+      ...house,
+    });
+
+    dataHouse = await House.findOne({
       where: {
         id: dataHouse.id,
       },
@@ -120,22 +145,18 @@ exports.addHouse = async (req, res) => {
         exclude: ["createdAt", "updatedAt", "cityId"],
       },
     });
+
+    dataHouse = JSON.parse(JSON.stringify(dataHouse));
+    dataHouse = {
+      ...dataHouse,
+      Ameneties: dataHouse.Ameneties.split(","),
+      image: path + image,
+    };
+
     res.status(200).send({
       status: "Success",
       message: "resource has successfully Add House",
-      data: {
-        name: houseOne.name,
-        city: {
-          id: houseOne.city.id,
-          name: houseOne.city.name,
-        },
-        address: houseOne.address,
-        price: houseOne.price,
-        typeRent: houseOne.typeRent,
-        Ameneties: houseOne.Ameneties.split(","),
-        bedRoom: houseOne.bedRoom,
-        bathroom: houseOne.bathroom,
-      },
+      data: dataHouse,
     });
   } catch (error) {
     console.log(error);
@@ -176,14 +197,16 @@ exports.editHouse = async (req, res) => {
 
     res.status(200).send({
       status: "Success",
-      message: "Update Succes",
+      message: "Update Success",
       data: {
+        id,
         name: houseOne.name,
         city: {
           id: houseOne.city.id,
           name: houseOne.city.name,
         },
         address: houseOne.address,
+        image: houseOne.image ? path + houseOne.image : null,
         price: houseOne.price,
         typeRent: houseOne.typeRent,
         Ameneties: houseOne.Ameneties.split(","),
