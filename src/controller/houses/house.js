@@ -1,37 +1,39 @@
 const { House, City, User, Roll } = require("../../../models");
 const { Op } = require("sequelize");
-const { lte, like } = Op;
 
 // Get All Houses
 exports.getHouses = async (req, res) => {
-  //console.log("Oke saya", House);
-  // console.log(req.query);
   const path = process.env.PATH_FILE;
-  let filterHouse = req.query;
-
-  if (filterHouse.hasOwnProperty("below_price")) {
-    filterHouse = {
-      ...filterHouse,
-      price: {
-        [lte]: parseInt(filterHouse.below_price),
-      },
-    };
-    delete filterHouse.price;
-  }
-  if (filterHouse.hasOwnProperty("Amenities")) {
-    filterHouse = {
-      ...filterHouse,
-      Ameneties: {
-        [like]: parseInt(filterHouse.Amenities),
-      },
-    };
-  }
 
   try {
+    let filters = { ...req.query };
+    let objFilter = {};
+    if (filters.typeRent != null) {
+      objFilter.typeRent = {
+        [Op.eq]: filters.typeRent,
+      };
+    }
+    if (filters.belowPrice != null) {
+      objFilter.price = {
+        [Op.lte]: parseInt(filters.belowPrice),
+      };
+    }
+    if (filters.bedRoom != null) {
+      objFilter.bedRoom = {
+        [Op.eq]: parseInt(filters.bedRoom),
+      };
+    }
+    if (filters.bathroom != null) {
+      objFilter.bathroom = {
+        [Op.eq]: parseInt(filters.bathroom),
+      };
+    }
+
+    console.log("objeck Filter ", objFilter);
+
     let houseData = await House.findAll({
-      where: {
-        ...filterHouse,
-      },
+      where: objFilter,
+
       include: {
         model: City,
         as: "city",
@@ -65,7 +67,7 @@ exports.getHouses = async (req, res) => {
       status: "Success",
       message: "resource has successfully get",
       data: {
-        houseData,
+        house: houseData,
       },
     });
   } catch (error) {
