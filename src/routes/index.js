@@ -1,4 +1,6 @@
 const { Router } = require("express");
+const multer = require("multer");
+const upload = multer();
 const {
   getUsers,
   getUser,
@@ -38,7 +40,7 @@ router.post("/signup", createUser);
 // Delete
 router.delete("/user/:id", deleteUser);
 // Update
-router.put("/user/:id", updateUser);
+router.patch("/user/:id", auth, uploadFile("profileImage"), updateUser);
 
 // 2. Houses
 // Get House
@@ -46,7 +48,12 @@ router.get("/houses", getHouses);
 // Get Detail House
 router.get("/house/:id", getHouse);
 // Add House
-router.post("/house", auth, uploadFile("imageFile"), addHouse);
+router.post(
+  "/house",
+  auth,
+  uploadFile("imageFile", "detail_one", "detail_two", "detail_three"),
+  addHouse
+);
 // Edit House
 router.patch("/house/:id", auth, editHouse);
 // Delete House
@@ -54,9 +61,9 @@ router.delete("/house/:id", auth, deleteHouse);
 
 // 3. Transaction
 // Add Transaction
-router.post("/transaction", auth, uploadFile("imageFile"), addTransaction);
+router.post("/transaction", auth, upload.array(), addTransaction);
 // Edit Transaction
-router.patch("/order/:id", auth, editTransaction);
+router.patch("/order/:id", auth, uploadFile("attachment"), editTransaction);
 // Get Transaction
 router.get("/order/:id", getTransaction);
 // Get All Transaction

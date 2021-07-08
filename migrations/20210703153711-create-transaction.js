@@ -9,10 +9,10 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       checkin: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
       },
       checkout: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
       },
       houseId: {
         type: Sequelize.INTEGER,

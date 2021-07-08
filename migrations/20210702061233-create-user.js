@@ -35,7 +35,7 @@ module.exports = {
       address: {
         type: Sequelize.STRING,
       },
-      image: {
+      profileImage: {
         type: Sequelize.STRING,
       },
       createdAt: {

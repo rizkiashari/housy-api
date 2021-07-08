@@ -3,7 +3,7 @@ const { Op } = require("sequelize");
 
 // Get All Houses
 exports.getHouses = async (req, res) => {
-  const path = process.env.PATH_FILE;
+  const path = process.env.PATH_FILE_HOUSE;
 
   try {
     let filters = { ...req.query };
@@ -82,7 +82,7 @@ exports.getHouses = async (req, res) => {
 // Get Detail House with id
 exports.getHouse = async (req, res) => {
   // console.log("Oke saya", House);
-  const path = process.env.PATH_FILE;
+  const path = process.env.PATH_FILE_HOUSE;
   try {
     const houseOne = await House.findOne({
       where: {
@@ -130,26 +130,8 @@ exports.getHouse = async (req, res) => {
 
 // Add House
 exports.addHouse = async (req, res) => {
-  const path = process.env.PATH_FILE;
-  let house = req.body;
-  const image = req.files.imageFile[0].filename;
-
   try {
-    house = {
-      ...house,
-      image,
-    };
-    const checkCity = await City.findOne({
-      where: {
-        id: house.cityId,
-      },
-    });
-    if (!checkCity) {
-      return res.status(500).send({
-        message: `city id ${house.cityId} not found`,
-      });
-    }
-    const userData = await User.findOne({
+    const userValidasi = await User.findOne({
       where: {
         id: req.idUser,
       },
@@ -161,20 +143,27 @@ exports.addHouse = async (req, res) => {
         },
       },
       attributes: {
-        exclude: ["listId", "createdAt", "updatedAt", "password", "image"],
+        exclude: ["createdAt", "updatedAt", "address", "password", "listId"],
       },
     });
 
-    console.log("Aku user list As", userData.listAs.name);
+    console.log("list As", userValidasi.listAs.name);
 
-    if (userData.listAs.name === "owner") {
-      let dataHouse = await House.create({
+    if (userValidasi.listAs.name === "owner") {
+      const path = process.env.PATH_FILE_HOUSE;
+      const house = req.body;
+      const houseOne = await House.create({
         ...house,
+        cityId: req.body.cityId,
+        image: req.files.imageFile[0].filename,
+        detail_one: req.files.detail_one[0].filename,
+        detail_two: req.files.detail_two[0].filename,
+        detail_three: req.files.detail_three[0].filename,
       });
 
-      dataHouse = await House.findOne({
+      let dataHouse = await House.findOne({
         where: {
-          id: dataHouse.id,
+          name: houseOne.name,
         },
         include: {
           model: City,
@@ -187,23 +176,34 @@ exports.addHouse = async (req, res) => {
           exclude: ["createdAt", "updatedAt", "cityId"],
         },
       });
-
       dataHouse = JSON.parse(JSON.stringify(dataHouse));
-      dataHouse = {
-        ...dataHouse,
-        Ameneties: dataHouse.Ameneties.split(","),
-        image: path + image,
-      };
-
       res.status(200).send({
         status: "Success",
-        message: "resource has successfully Add House",
-        data: dataHouse,
+        message: "add house berhasil",
+        data: {
+          name: dataHouse.name,
+          city: {
+            id: dataHouse.city.id,
+            name: dataHouse.city.name,
+          },
+          address: dataHouse.address,
+          price: dataHouse.price,
+          image: dataHouse.image ? path + dataHouse.image : null,
+          detail_one: path + dataHouse.detail_one,
+          detail_two: path + dataHouse.detail_two,
+          detail_three: path + dataHouse.detail_three,
+          typeRent: dataHouse.typeRent,
+          description: dataHouse.description,
+          area: dataHouse.area,
+          Ameneties: dataHouse.Ameneties.split(","),
+          bedRoom: dataHouse.bedRoom,
+          bathroom: dataHouse.bathroom,
+        },
       });
     } else {
       res.status(500).send({
         status: "failed",
-        message: `Gagal add house, Kamu ${userData.listAs.name}`,
+        message: `gagal add House, kamu ${userValidasi.listAs.name}`,
       });
     }
   } catch (error) {
@@ -218,52 +218,73 @@ exports.addHouse = async (req, res) => {
 // Edit House
 exports.editHouse = async (req, res) => {
   try {
-    const { id } = req.params;
-    const path = process.env.PATH_FILE;
-
-    //let dataHouse = req.body;
-
-    await House.update(req.body, {
+    const userValidasi = await User.findOne({
       where: {
-        id,
-      },
-    });
-
-    const houseOne = await House.findOne({
-      where: {
-        id,
+        id: req.idUser,
       },
       include: {
-        model: City,
-        as: "city",
+        model: Roll,
+        as: "listAs",
         attributes: {
           exclude: ["createdAt", "updatedAt"],
         },
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt", "cityId"],
+        exclude: ["createdAt", "updatedAt", "address", "password", "listId"],
       },
     });
 
-    res.status(200).send({
-      status: "Success",
-      message: "Update Success",
-      data: {
-        id,
-        name: houseOne.name,
-        city: {
-          id: houseOne.city.id,
-          name: houseOne.city.name,
+    if (userValidasi.listAs.name === "owner") {
+      const { id } = req.params;
+      const path = process.env.PATH_FILE_HOUSE;
+
+      await House.update(req.body, {
+        where: {
+          id,
         },
-        address: houseOne.address,
-        image: houseOne.image ? path + houseOne.image : null,
-        price: houseOne.price,
-        typeRent: houseOne.typeRent,
-        Ameneties: houseOne.Ameneties.split(","),
-        bedRoom: houseOne.bedRoom,
-        bathroom: houseOne.bathroom,
-      },
-    });
+      });
+
+      const houseOne = await House.findOne({
+        where: {
+          id,
+        },
+        include: {
+          model: City,
+          as: "city",
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+        attributes: {
+          exclude: ["createdAt", "updatedAt", "cityId"],
+        },
+      });
+
+      res.status(200).send({
+        status: "Success",
+        message: "Update Success",
+        data: {
+          id,
+          name: houseOne.name,
+          city: {
+            id: houseOne.city.id,
+            name: houseOne.city.name,
+          },
+          address: houseOne.address,
+          image: houseOne.image ? path + houseOne.image : null,
+          price: houseOne.price,
+          typeRent: houseOne.typeRent,
+          Ameneties: houseOne.Ameneties.split(","),
+          bedRoom: houseOne.bedRoom,
+          bathroom: houseOne.bathroom,
+        },
+      });
+    } else {
+      res.status(500).send({
+        status: "failed",
+        message: `gagal add House, kamu ${userValidasi.listAs.name}`,
+      });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -276,20 +297,42 @@ exports.editHouse = async (req, res) => {
 // Delete House
 exports.deleteHouse = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const dataHouse = await House.destroy({
+    const userValidasi = await User.findOne({
       where: {
-        id,
+        id: req.idUser,
+      },
+      include: {
+        model: Roll,
+        as: "listAs",
+        attributes: {
+          exclude: ["createdAt", "updatedAt"],
+        },
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "address", "password", "listId"],
       },
     });
-    res.status(200).send({
-      status: "Success",
-      message: "resource has successfully deleted House",
-      data: {
-        id,
-      },
-    });
+    if (userValidasi.listAs.name === "owner") {
+      const { id } = req.params;
+
+      const dataHouse = await House.destroy({
+        where: {
+          id,
+        },
+      });
+      res.status(200).send({
+        status: "Success",
+        message: "resource has successfully deleted House",
+        data: {
+          id,
+        },
+      });
+    } else {
+      res.status(500).send({
+        status: "failed",
+        message: `gagal add House, kamu ${userValidasi.listAs.name}`,
+      });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).send({

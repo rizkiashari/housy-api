@@ -25,8 +25,8 @@ module.exports = (sequelize, DataTypes) => {
   }
   transaction.init(
     {
-      checkin: DataTypes.STRING,
-      checkout: DataTypes.STRING,
+      checkin: DataTypes.DATE,
+      checkout: DataTypes.DATE,
       total: DataTypes.INTEGER,
       status: DataTypes.STRING,
       attachment: DataTypes.STRING,

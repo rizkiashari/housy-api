@@ -207,8 +207,14 @@ exports.login = async (req, res) => {
 exports.updateUser = async (req, res) => {
   //console.log("Oke saya user", User);
   const { id } = req.params;
+  const path = process.env.PATH_FILE_PROFILE;
   try {
-    await User.update(req.body, {
+    let userStored = req.body;
+    userStored = {
+      profileImage: path + req.files.profileImage[0].filename,
+      ...userStored,
+    };
+    let userData = await User.update(userStored, {
       where: {
         id: id,
       },
@@ -224,7 +230,9 @@ exports.updateUser = async (req, res) => {
     res.status(200).send({
       status: "Success",
       message: "resource has successfully updated user",
-      data: user,
+      data: {
+        user,
+      },
     });
   } catch (error) {
     console.log(error);

@@ -1,18 +1,45 @@
 const multer = require("multer");
 
-exports.uploadFile = (imageFile) => {
+exports.uploadFile = (
+  imageFile,
+  detail_one,
+  detail_two,
+  detail_three,
+  attachment,
+  profileImage
+) => {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads'); //Lokasi penyimpanan file
+      switch (file.fieldname) {
+        case "imageFile":
+        case "detail_one":
+        case "detail_two":
+        case "detail_three":
+          cb(null, "uploads/houses"); //Lokasi penyimpanan file
+          break;
+        case "attachment":
+          cb(null, "uploads/transaction"); //Lokasi penyimpanan file
+          break;
+        case "profileImage":
+          cb(null, "uploads/profile"); //Lokasi penyimpanan file
+          break;
+      }
     },
     filename: function (req, file, cb) {
       cb(null, Date.now() + "-" + file.originalname.replace(/\s/g, ""));
     },
   });
-  
+
   // Function untuk filter file berdasarkan type
   const fileFilter = function (req, file, cb) {
-    if (file.fieldname === imageFile) {
+    if (
+      file.fieldname === imageFile &&
+      file.fieldname === detail_one &&
+      file.fieldname === detail_two &&
+      file.fieldname === detail_three &&
+      file.fieldname === attachment &&
+      file.fieldname === profileImage
+    ) {
       if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|git|GIF)$/)) {
         req.fileValidationError = {
           message: "Only image files are allowed!",
@@ -36,6 +63,26 @@ exports.uploadFile = (imageFile) => {
   }).fields([
     {
       name: imageFile,
+      maxCount: 1,
+    },
+    {
+      name: detail_one,
+      maxCount: 1,
+    },
+    {
+      name: detail_two,
+      maxCount: 1,
+    },
+    {
+      name: detail_three,
+      maxCount: 1,
+    },
+    {
+      name: attachment,
+      maxCount: 1,
+    },
+    {
+      name: profileImage,
       maxCount: 1,
     },
   ]); //Menentukan jumlah file
